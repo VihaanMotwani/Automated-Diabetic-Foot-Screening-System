@@ -1,0 +1,1 @@
+# Automated-Diabetic-Foot-Screening-System
