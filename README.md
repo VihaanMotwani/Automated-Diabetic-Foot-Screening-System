@@ -1,5 +1,5 @@
 # NHG Project - Automated Diabetic Foot Screening System
-veNTUre Project (NHG - NTU)
+veNTUre Project
 ---
 
 ## **1. Introduction**
