@@ -1,4 +1,4 @@
-# Automated Diabetic Foot Screening System
+# Diabetic Foot Screening System
 veNTUre Project - supervised by Dr. Ang Yee Gary
 
 ### A Machine Learning Project for the National Healthcare Group
