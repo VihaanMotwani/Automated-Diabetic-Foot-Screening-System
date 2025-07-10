@@ -1,98 +1,110 @@
-# NHG Project - Automated Diabetic Foot Screening System
-veNTUre Project
----
+# Automated Diabetic Foot Screening System
+veNTUre Project - supervised by Dr. Ang Yee Gary
 
-## **1. Introduction**
-This project focuses on segmenting **thermal images of feet** to aid in diabetic foot screening. The objective is to accurately **isolate the foot** while eliminating background elements such as **noise, overlays, and text**.
+### A Machine Learning Project for the National Healthcare Group
 
-Three segmentation approaches were tested:
-- **Color-Based Segmentation in HSV**
-- **Segment Anything Model (SAM)**
-- **Greyscale Thresholding with Otsu’s Method**
-
-Each method is described below, including the **process, advantages, and limitations**.
+This repository details the development of a complete machine learning pipeline to classify diabetic foot complication risk using the **Plantar Thermogram Database**. The project successfully navigates complex image processing, iterative model development, and rigorous optimization, achieving a final **95% classification accuracy**.
 
 ---
 
-## **2. Methods Used**
+## 1. Project Overview
 
-### **Color-Based Segmentation in HSV**
-#### **Process:**
-- Convert the image to **HSV format** to enhance differentiation based on temperature variations.
-- Define **HSV thresholds** to isolate the foot region and suppress background details.
-- Generate a **binary mask** where values within the HSV range are retained.
-- Apply **morphological closing** to remove small holes.
-- Identify and retain the **largest connected component**.
-- Apply the mask to the original image to extract the foot.
+The primary goal of this project is to develop a robust system for the automated screening of diabetic foot, a critical step in preventing severe complications. This project explores two stages of this system:
 
-#### **Advantages:**
-- Computationally efficient.
-- Works well when the foot has a **distinct temperature profile**.
+1.  **Image Segmentation:** Accurately isolating the foot region from raw thermal images, which often contain background noise, text overlays, and other artifacts.
+2.  **Classification:** Using segmented foot data to train a high-performance classifier that can distinguish between healthy (Control) and diabetic (Diabetic) feet.
 
-#### **Limitations:**
-- Requires **manual tuning** of HSV values.
-- **Ineffective** when the background has similar colors.
-- Text overlays can interfere with segmentation.
+After extensive experimentation with both classical machine learning and deep learning approaches, the final, most successful model was an **optimized XGBoost classifier** built upon a set of 25+ engineered statistical features and a strategically balanced dataset.
 
 ---
 
-### **Segment Anything Model (SAM)**
-#### **Process:**
-- Load the **SAM ViT-Huge model** and initialize **automatic mask generation**.
-- Generate **segmentation masks** for different objects in the image.
-- Merge all detected masks into a **single mask**.
-- Retain the **largest connected component** (assuming it represents the foot).
-- Apply **morphological closing** for refinement.
-- Extract the foot while preserving **thermal data**.
+## 2. Dataset
 
-#### **Advantages:**
-- Adaptable to **varying image conditions** without predefined thresholds.
-- Handles **complex backgrounds** better than simpler methods.
+This project utilizes thermographic images collected by Dr. Ang Yee Gary (NHG) fo the image processing module.
 
-#### **Limitations:**
-- May **over-segment** and include unwanted elements.
-- Requires **significant computational power**.
-- **Filtering needed** to remove overlays and irrelevant regions.
+Due to the small size of the collected data, the classification module utilizes the publicly available **Plantar Thermogram Database** from IEEE DataPort, which is designed for the study of diabetic foot complications.
+
+-   **Permalink:** [https://ieee-dataport.org/open-access/plantar-thermogram-database-study-diabetic-foot-complications](https://ieee-dataport.org/open-access/plantar-thermogram-database-study-diabetic-foot-complications)
+-   **DOI:** [https://dx.doi.org/10.21227/tm4t-9n15](https://dx.doi.org/10.21227/tm4t-9n15)
+
+The dataset contains thermal images for 90 control subjects and 244 diabetic subjects, presenting a significant class imbalance challenge that was a key focus of this project.
 
 ---
 
-### **Greyscale Thresholding with Otsu’s Method**
-#### **Process:**
-- Convert the image to **grayscale**.
-- Apply **Gaussian blur** to minimize noise.
-- Use **Otsu’s method** to determine an **optimal threshold** for segmentation.
-- Apply **morphological closing** to refine the mask.
-- Identify and retain the **largest connected component**.
-- Extract the foot region using the **final mask**.
+## 3. Repository Structure & Notebooks
 
-#### **Advantages:**
-- **Fast** and **fully automatic**.
-- Works well for **images with clear foreground-background separation**.
+This repository contains three Jupyter notebooks that document the project's journey from preprocessing to the final model.
 
-#### **Limitations:**
-- Struggles when the **foot and background have similar intensities**.
-- Often **includes overlays and text**.
-- Less effective in **varied lighting conditions**.
+1.  **`Image_Segmentation.ipynb`**: Details the exploration of three different image segmentation techniques (Color-based, Otsu's Thresholding, and SAM). This notebook establishes the preprocessing pipeline, with the Segment Anything Model (SAM) being selected for its superior robustness.
+
+2.  **`Classical_ML_Pipeline.ipynb` (ML2.ipynb - The Final Model)**: This is the core notebook detailing the successful end-to-end machine learning pipeline. It covers advanced feature engineering, strategic data balancing via under-sampling, hyperparameter optimization with Optuna, and the final model evaluation that achieved ~95% accuracy.
+
+3.  **`CNN_Experimentation.ipynb` (DFU_CNN.ipynb)**: This notebook documents the investigation into using deep learning (CNNs and Transfer Learning) for this task. The experiments revealed that for this dataset's size and domain specificity, CNN models were prone to severe overfitting and could not learn generalizable patterns. This confirmed that the classical feature-based approach was superior for this problem.
 
 ---
 
-## **3. Future Suggestions**
-- Implement **automated overlay removal** using **color-based filtering**.
-- Explore **deep learning models trained on thermal images**.
-- Utilize **bounding box or point-based segmentation with SAM** for improved precision.
+## 4. Methodology & Key Findings
+
+### 4.1. Image Segmentation (Preprocessing)
+
+The first step was to isolate the foot from the background. Three methods were evaluated:
+-   **Color-Based Segmentation in HSV:** Fast but required manual tuning and was not robust to background noise.
+-   **Greyscale Thresholding with Otsu’s Method:** Fully automatic but struggled with images where the foot and background had similar thermal intensities.
+-   **Segment Anything Model (SAM):** Proved to be the most robust and adaptable method, successfully handling complex backgrounds and varying image conditions without needing predefined thresholds. It was chosen for the final pipeline.
+
+### 4.2. Feature Engineering
+
+Instead of using raw pixel data, a comprehensive set of **25+ statistical and texture-based features** was engineered from the segmented thermogram data for each foot. This approach proved more effective than end-to-end deep learning by creating a rich, tabular dataset that classical models could interpret effectively.
+
+Features included:
+-   **Basic Statistics:** Mean, median, std dev, min/max temperature.
+-   **Distribution Shape:** Skewness, kurtosis, and various temperature percentiles.
+-   **Robust Statistics:** Interquartile Range (IQR) and Median Absolute Deviation (MAD).
+-   **Texture & Zone Features:** Ratios of hot/cold pixels and simplified temperature gradients.
+
+### 4.3. Model Development and Optimization
+
+The core challenge was the significant class imbalance (90 Control vs. 244 Diabetic). The following steps were taken to build the final, high-performance model:
+
+1.  **Data Balancing:** Initial models were heavily biased. The key breakthrough was implementing a **strategic under-sampling of the majority (Diabetic) class** to create a perfectly balanced 90:90 dataset. This forced the model to learn the features of both classes equally.
+2.  **Model Selection:** An optimization "bake-off" was conducted between two powerful models: **XGBoost** and a Support Vector Machine (SVM).
+3.  **Hyperparameter Tuning:** The **Optuna** framework was used to run over 100 trials for each model, automatically finding the optimal set of hyperparameters for the highest cross-validated accuracy.
+4.  **Final Model:** The optimized **XGBoost classifier** was selected as the top-performing model, demonstrating superior performance on the balanced dataset.
 
 ---
 
-## **4. What Have We Learned?**
-### **1. OpenCV for Python Developers**
-This course provided a strong foundation in **image processing** using OpenCV, covering key techniques for **object detection and feature extraction**.
-- **Image Manipulation & Thresholding:** Understanding **pixel operations** and applying **simple/adaptive thresholding**.
-- **Edge Detection & Contours:** Using **Canny edge detection** and **contour analysis** to extract object boundaries.
-- **Object & Face Detection:** Applying **Haar cascades** for detecting facial features and **skin detection** for biometric applications.
+## 5. Final Results
 
-### **2. Deep Learning: Image Recognition**
-This course introduced **CNNs and AI-powered image recognition**, focusing on automated **feature extraction and classification**.
-- **Understanding Deep Learning for Images:** Covering **image processing basics**, **CNN architectures**, and **hierarchical feature extraction**.
-- **Image Recognition Fundamentals:** Learning about **data preprocessing, feeding structured data into deep networks**, and developing **custom image recognition systems**.
-- **Success Metrics & Optimization:** Evaluating model **accuracy, precision, recall, and F1-score** to ensure reliable performance.
+The final optimized XGBoost model, trained on the balanced dataset, achieved the following outstanding results on the unseen test set:
 
+| Metric             | Control | Diabetic | **Accuracy (Overall)** |
+| ------------------ | :-----: | :------: | :--------------------: |
+| **Precision**      |  1.00   |   0.90   |                        |
+| **Recall**         |  0.89   |   1.00   |         **94.4%**        |
+| **F1-Score**       |  0.94   |   0.95   |                        |
+| **Macro Avg**      |  0.95   |   0.94   |         **0.94**         |
+
+*Note: The final reported accuracy of ~95% was achieved by applying an accuracy-optimized probability threshold to the model's output.*
+
+---
+
+## 6. How to Run
+
+1.  Ensure you are in a GPU-enabled environment (e.g., Google Colab).
+2.  Mount your Google Drive and ensure the dataset path in the notebooks is correct.
+3.  Install the required dependencies by running the first cell in `Classical_ML_Pipeline.ipynb`:  
+    `!pip install optuna imbalanced-learn xgboost`
+4.  Run the notebooks. It is recommended to start with `Classical_ML_Pipeline.ipynb` to see the final, successful approach.
+
+---
+
+## 7. Skills & Tools Demonstrated
+
+*   **Programming & Tools:** Python, Pandas, NumPy, OpenCV, Matplotlib, Seaborn, Jupyter
+*   **Machine Learning:**
+    *   **Classification:** XGBoost, SVM, Random Forest
+    *   **Data Preprocessing:** Feature Engineering, StandardScaler, Data Balancing (Under-sampling)
+    *   **Model Optimization:** Hyperparameter Tuning (Optuna), Cross-Validation, Threshold-Moving
+    *   **Evaluation:** Classification Reports, Confusion Matrices, Accuracy, Precision/Recall/F1
+*   **Deep Learning (Experimental):** TensorFlow, Keras, CNNs, Transfer Learning (EfficientNet), Image Augmentation
+*   **Image Processing:** Segment Anything Model (SAM)
